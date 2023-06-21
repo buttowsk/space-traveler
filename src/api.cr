@@ -9,18 +9,18 @@ end
 
 get "/travel_plans" do |env|
   travel_plans = TravelPlan.all().to_a
-  
+
   result = travel_plans.map do |travel_plan|
     stops = travel_plan.travel_stops.map do |travel_stop|
       travel_stop.stop_id
     end
 
-    if env.params.query.has_key?("expand") && env.params.query["expand"] === "true"
-      infos = expanded_info(stops)
-      {id: travel_plan.id, travel_stops: infos}
-    else
-      {id: travel_plan.id, travel_stops: stops}
-    end
+    expand = env.params.query.has_key?("expand") && env.params.query["expand"] == "true"
+    optimize = env.params.query.has_key?("optimize") && env.params.query["optimize"] == "true"
+
+    travel_stops = query_rules(optimize, expand, stops)
+
+    { id: travel_plan.id, travel_stops: travel_stops }
   end
 
   env.response.status_code = 200
@@ -59,7 +59,7 @@ get "/travel_plans/:id" do |env|
   end
   
   if env.params.query.has_key?("expand") && env.params.query["expand"] === "true"
-    infos = expanded_info(stops)
+    infos = query_rules(false, true, stops)
     env.response.status_code = 200
     {id: travel_plan.id, travel_stops: infos}.to_json
   else
@@ -96,8 +96,6 @@ delete "/travel_plans/:id" do |env|
 
   env.response.status_code = 204
 end
-
-
 
 
 Kemal.run

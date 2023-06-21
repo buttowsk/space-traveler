@@ -4,4 +4,3 @@
 /.shards/
 *.dwarf
 /postgres-data/
-*.db
